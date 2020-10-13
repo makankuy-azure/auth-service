@@ -61,7 +61,7 @@ namespace AuthService.API.Services
                 return new OkObjectResult(
                     UserResponse.Load(user));
             }
-            catch (NotFoundException e)
+            catch (NotFoundException)
             {
                 /*
                  * Because we're using access token to authenticate, user id should be exist in database.
