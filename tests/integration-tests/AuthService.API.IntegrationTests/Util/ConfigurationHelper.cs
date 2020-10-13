@@ -21,6 +21,7 @@ namespace AuthService.API.IntegrationTests.Util
                     root.Bind(settings);
 
                     _settings = settings;
+                    _settings.ValidateAttributes();
                 }
 
                 return _settings;
