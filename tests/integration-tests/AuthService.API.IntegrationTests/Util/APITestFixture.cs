@@ -1,44 +1,37 @@
 ﻿using AuthService.AccessTokenHandler;
+using AuthService.AccessTokenHandler.Settings;
+using AuthService.API.IntegrationTests.Settings;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 
 namespace AuthService.API.IntegrationTests.Util
 {
-    public class APITestFixture : IDisposable
+    public class APITestFixture
     {
-        private readonly Process _funcHostProcess;
-
-        public readonly HttpClient Client = new HttpClient();
+        public readonly HttpClient Client;
 
         public AccessTokenProvider AccessTokenProvider;
 
+        public ApplicationSettings ApplicationSettings;
+
         public APITestFixture()
         {
-            var dotnetExePath = Environment.ExpandEnvironmentVariables(ConfigurationHelper.Settings.DotNetExecutablePath);
-            var functionHostPath = Environment.ExpandEnvironmentVariables(ConfigurationHelper.Settings.FunctionHostPath);
-            var functionAppFolder = Path.GetRelativePath(Directory.GetCurrentDirectory(), ConfigurationHelper.Settings.FunctionApplicationPath);
+            var builder = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json");
 
-            _funcHostProcess = new Process
+            IConfiguration configuration = builder.Build();
+            ApplicationSettings = configuration.Get<ApplicationSettings>(c => c.BindNonPublicProperties = true);
+            ApplicationSettings.ValidateAttributes();
+
+            Client = new HttpClient
             {
-                StartInfo =
-                {
-                    FileName = dotnetExePath,
-                    Arguments = $"\"{functionHostPath}\" start -p {Port}",
-                    WorkingDirectory = functionAppFolder
-                }
+                BaseAddress = new Uri(ApplicationSettings.AuthServiceAPIUrl.BaseUrl),
             };
-            var success = _funcHostProcess.Start();
-            if (!success)
-            {
-                throw new InvalidOperationException("Could not start Azure Functions host.");
-            }
 
-            Client.BaseAddress = new Uri($"http://localhost:{Port}");
-
-            AccessTokenProvider = new AccessTokenProvider(ConfigurationHelper.Settings.AccessTokenSettings);
+            AccessTokenProvider = new AccessTokenProvider(configuration.GetSection(nameof(AccessTokenSettings)).Get<AccessTokenSettings>());
         }
 
         public AccessTokenResult ValidateToken(string accessToken)
@@ -50,15 +43,5 @@ namespace AuthService.API.IntegrationTests.Util
         }
 
         public int Port { get; } = 7071;
-
-        public virtual void Dispose()
-        {
-            if (!_funcHostProcess.HasExited)
-            {
-                _funcHostProcess.Kill();
-            }
-
-            _funcHostProcess.Dispose();
-        }
     }
 }

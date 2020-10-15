@@ -1,6 +1,5 @@
+using AuthService.API.IntegrationTests.Response;
 using AuthService.API.IntegrationTests.Util;
-using AuthService.API.Services;
-using AuthService.API.Services.Response;
 using AuthService.Domain.UnitTests.Util;
 using AuthService.Persistence.IntegrationTests.Util;
 using Newtonsoft.Json;
@@ -32,7 +31,7 @@ namespace AuthService.API.IntegrationTests.User
 
             /* sign up using service */
             var expectedUser = UserFactory.GenerateUserUsingEmail();
-            var requestBodyObject = new SignUpService.SignUpByEmailRequest
+            var requestBodyObject = new SignUpByEmailRequest
             {
                 Email = expectedUser.Email,
                 Password = UserFactory.DefaultPassword,
@@ -42,7 +41,7 @@ namespace AuthService.API.IntegrationTests.User
 
             var content = new StringContent(JsonConvert.SerializeObject(requestBodyObject), Encoding.UTF8, "application/json");
             
-            var httpResponse = await _apiFixture.Client.PostAsync("api/sign-up-by-email", content);
+            var httpResponse = await _apiFixture.Client.PostAsync(_apiFixture.ApplicationSettings.AuthServiceAPIUrl.SignUpByEmail, content);
 
             httpResponse.EnsureSuccessStatusCode();
 
@@ -67,6 +66,21 @@ namespace AuthService.API.IntegrationTests.User
             Assert.Equal(expectedUser.FirstName, actualUser.FirstName);
             Assert.Equal(expectedUser.LastName, actualUser.LastName);
             Assert.True(expectedUser.SignUpDate > dateTimeBeforeSignUp);
+        }
+
+        public class SignUpByEmailRequest
+        {
+            [JsonProperty("email")]
+            public string Email { get; set; }
+
+            [JsonProperty("password")]
+            public string Password { get; set; }
+
+            [JsonProperty("firstName")]
+            public string FirstName { get; set; }
+
+            [JsonProperty("LastName")]
+            public string LastName { get; set; }
         }
     }
 }

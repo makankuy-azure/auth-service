@@ -1,7 +1,6 @@
 using AuthService.AccessTokenHandler;
+using AuthService.API.IntegrationTests.Response;
 using AuthService.API.IntegrationTests.Util;
-using AuthService.API.Services;
-using AuthService.API.Services.Response;
 using AuthService.Domain.UnitTests.Util;
 using AuthService.Persistence.IntegrationTests.Util;
 using Newtonsoft.Json;
@@ -37,7 +36,7 @@ namespace AuthService.API.IntegrationTests.User
 
             /* get the data using service */
 
-            var requestBodyObject = new SignInService.SignInByEmailRequest
+            var requestBodyObject = new SignInByEmailRequest
             {
                 Email = expectedUser.Email,
                 Password = UserFactory.DefaultPassword
@@ -45,7 +44,7 @@ namespace AuthService.API.IntegrationTests.User
 
             var content = new StringContent(JsonConvert.SerializeObject(requestBodyObject), Encoding.UTF8, "application/json");
             
-            var httpResponse = await _apiFixture.Client.PostAsync("api/sign-in-by-email", content);
+            var httpResponse = await _apiFixture.Client.PostAsync(_apiFixture.ApplicationSettings.AuthServiceAPIUrl.SignInByEmail, content);
 
             httpResponse.EnsureSuccessStatusCode();
 
@@ -68,6 +67,15 @@ namespace AuthService.API.IntegrationTests.User
 
             /* ensure the last login using email datetime is updated */
             Assert.True(lastLoginUsingEmail > dateTimeBeforeSignIn);
+        }
+
+        public class SignInByEmailRequest
+        {
+            [JsonProperty("email")]
+            public string Email { get; set; }
+
+            [JsonProperty("password")]
+            public string Password { get; set; }
         }
     }
 }
